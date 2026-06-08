@@ -1,0 +1,166 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|c:\\users\\dell\\documents\\espe_git\\music-player-with-animations\\musicplayer\\musicplayer\\frmindex.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|solutionrelative:musicplayer\\frmindex.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|c:\\users\\dell\\documents\\espe_git\\music-player-with-animations\\musicplayer\\musicplayer\\visualizationpanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|solutionrelative:musicplayer\\visualizationpanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\musicplayer\\playlistmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|solutionrelative:musicplayer\\playlistmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\musicplayer\\filehelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|solutionrelative:musicplayer\\filehelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\musicplayer\\frmindex.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|solutionrelative:musicplayer\\frmindex.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\musicplayer\\audioplayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|solutionrelative:musicplayer\\audioplayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\musicplayer\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7CE808A3-58FF-4ED2-BA47-A10506C677C4}|MusicPlayer\\MusicPlayer.csproj|solutionrelative:musicplayer\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "FileHelper.cs",
+              "DocumentMoniker": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\FileHelper.cs",
+              "RelativeDocumentMoniker": "MusicPlayer\\FileHelper.cs",
+              "ToolTip": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\FileHelper.cs",
+              "RelativeToolTip": "MusicPlayer\\FileHelper.cs",
+              "ViewState": "AgIAAH4AAAAAAAAAAAAAAIQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-08T21:16:09.951Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PlaylistManager.cs",
+              "DocumentMoniker": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\PlaylistManager.cs",
+              "RelativeDocumentMoniker": "MusicPlayer\\PlaylistManager.cs",
+              "ToolTip": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\PlaylistManager.cs",
+              "RelativeToolTip": "MusicPlayer\\PlaylistManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-08T21:16:09.954Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "FrmIndex.cs",
+              "DocumentMoniker": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\FrmIndex.cs",
+              "RelativeDocumentMoniker": "MusicPlayer\\FrmIndex.cs",
+              "ToolTip": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\FrmIndex.cs*",
+              "RelativeToolTip": "MusicPlayer\\FrmIndex.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADICAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-08T21:16:09.498Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "VisualizationPanel.cs",
+              "DocumentMoniker": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\VisualizationPanel.cs",
+              "RelativeDocumentMoniker": "MusicPlayer\\VisualizationPanel.cs",
+              "ToolTip": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\VisualizationPanel.cs",
+              "RelativeToolTip": "MusicPlayer\\VisualizationPanel.cs",
+              "ViewState": "AgIAAPAAAAAAAAAAAAAmwPUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-08T22:08:39.815Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AudioPlayer.cs",
+              "DocumentMoniker": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\AudioPlayer.cs",
+              "RelativeDocumentMoniker": "MusicPlayer\\AudioPlayer.cs",
+              "ToolTip": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\AudioPlayer.cs",
+              "RelativeToolTip": "MusicPlayer\\AudioPlayer.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAIBJwGcAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-08T21:16:09.951Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "FrmIndex.cs [Design]",
+              "DocumentMoniker": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\FrmIndex.cs",
+              "RelativeDocumentMoniker": "MusicPlayer\\FrmIndex.cs",
+              "ToolTip": "C:\\Users\\dalex\\OneDrive\\Documentos\\ESPE\\Grafica\\GitHub\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\FrmIndex.cs [Design]",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\dalex\\OneDrive\\Documentos\\ESPE\\Grafica\\GitHub\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\FrmIndex.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003525|",
+              "WhenOpened": "2026-06-08T21:16:09.954Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\Program.cs",
+              "RelativeDocumentMoniker": "MusicPlayer\\Program.cs",
+              "ToolTip": "C:\\Users\\DELL\\Documents\\Espe_GIT\\music-player-with-animations\\MusicPlayer\\MusicPlayer\\Program.cs",
+              "RelativeToolTip": "MusicPlayer\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-08T21:16:09.956Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
