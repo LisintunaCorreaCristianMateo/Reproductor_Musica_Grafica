@@ -1,4 +1,4 @@
-using NAudio.Gui;
+﻿using NAudio.Gui;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -51,7 +51,6 @@ namespace MusicPlayer
                 BackColor = Color.Black,
                 Location = new Point(0, 0)
             };
-            visualizationPanel.SetAudioPlayer(audioPlayer);
 
             // Handle form resize to adjust panel size
             this.Resize += UpdateVisualizationPanelSize;
@@ -77,6 +76,7 @@ namespace MusicPlayer
         private void SetupAudioPlayer()
         {
             audioPlayer = new AudioPlayer();
+            audioPlayer.FftCalculated += AudioPlayer_FftCalculated;
             audioPlayer.PlaybackStateChanged += AudioPlayer_PlaybackStateChanged;
         }
 
@@ -100,6 +100,11 @@ namespace MusicPlayer
         }
 
         // Event Handlers
+
+        private void AudioPlayer_FftCalculated(object sender, float[] magnitudes)
+        {
+            visualizationPanel?.UpdateVisualization(magnitudes);
+        }
 
         private void AudioPlayer_PlaybackStateChanged(object sender, PlaybackState state)
         {

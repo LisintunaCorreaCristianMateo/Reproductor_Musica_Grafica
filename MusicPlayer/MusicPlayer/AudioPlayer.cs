@@ -1,4 +1,4 @@
-﻿using NAudio.Wave;
+using NAudio.Wave;
 using NAudio.Dsp;
 using NAudio.Wave.SampleProviders;
 using System.IO;
@@ -17,10 +17,19 @@ namespace MusicPlayer
     {
         private WaveOutEvent outputDevice;
         private WaveStream audioFile;
-        private readonly AudioAnalyzer analyzer;
         private float volume = 0.5f;
         private bool isPositionChanging = false;
 
+        // Búfer circular para almacenar muestras de audio mono
+        public CircularSampleBuffer SampleBuffer { get; private set; }
+
+        // Propiedades expuestas para la visualización
+        public int SampleRate => audioFile?.WaveFormat.SampleRate ?? 0;
+        public int LatencyMilliseconds => 100;
+        public int FftLength { get; } = 1024;
+        public long AudioPosition => audioFile?.Position ?? 0;
+
+        // Mantener este evento para compatibilidad, aunque ya no lo disparemos desde el audio thread
         public event EventHandler<float[]> FftCalculated;
         public event EventHandler<PlaybackState> PlaybackStateChanged;
         public event EventHandler TrackEnded;
@@ -64,8 +73,7 @@ namespace MusicPlayer
 
         public AudioPlayer(int fftLength = 1024)
         {
-            analyzer = new AudioAnalyzer(fftLength);
-            analyzer.FftCalculated += (sender, magnitudes) => FftCalculated?.Invoke(this, magnitudes);
+            FftLength = fftLength;
         }
 
         public void Load(string filePath)
@@ -86,7 +94,11 @@ namespace MusicPlayer
                 audioFile = new AudioFileReader(filePath);
             }
 
-            outputDevice = new WaveOutEvent();
+            // Inicializar el búfer circular para el sample rate actual
+            int sampleRate = audioFile.WaveFormat.SampleRate;
+            SampleBuffer = new CircularSampleBuffer(sampleRate * 2); // 2 segundos de historial
+
+            outputDevice = new WaveOutEvent { DesiredLatency = 100 };
             outputDevice.Volume = volume;
 
             // Configurar eventos
@@ -94,7 +106,7 @@ namespace MusicPlayer
 
             // Inicializar con el proveedor de muestras (convertir a ISampleProvider)
             var sampleProv = audioFile.ToSampleProvider();
-            outputDevice.Init(new SampleProviderWrapper(sampleProv, analyzer));
+            outputDevice.Init(new SampleProviderWrapper(sampleProv, this));
 
             OnPlaybackStateChanged(PlaybackState.Stopped);
         }
@@ -116,6 +128,8 @@ namespace MusicPlayer
             outputDevice?.Stop();
             if (audioFile != null)
                 audioFile.Position = 0;
+            // Limpiar el búfer circular al detener
+            SampleBuffer?.Reset();
             OnPlaybackStateChanged(PlaybackState.Stopped);
         }
 
@@ -148,12 +162,12 @@ namespace MusicPlayer
     public class SampleProviderWrapper : ISampleProvider
     {
         private readonly ISampleProvider source;
-        private readonly AudioAnalyzer analyzer;
+        private readonly AudioPlayer player;
 
-        public SampleProviderWrapper(ISampleProvider source, AudioAnalyzer analyzer)
+        public SampleProviderWrapper(ISampleProvider source, AudioPlayer player)
         {
             this.source = source;
-            this.analyzer = analyzer;
+            this.player = player;
             this.WaveFormat = source.WaveFormat;
         }
 
@@ -162,78 +176,101 @@ namespace MusicPlayer
         public int Read(float[] buffer, int offset, int count)
         {
             var samplesRead = source.Read(buffer, offset, count);
+            if (samplesRead <= 0) return samplesRead;
 
-            // Enviar muestras al analizador
-            for (int i = 0; i < samplesRead; i++)
+            int channels = source.WaveFormat.Channels;
+            int monoSamplesCount = samplesRead / channels;
+
+            // Obtener la posición absoluta en bytes después de la lectura
+            long bytePosition = player.AudioPosition;
+            int bytesPerFrame = source.WaveFormat.BlockAlign;
+            long endFrameIndex = bytePosition / bytesPerFrame;
+            long startFrameIndex = endFrameIndex - monoSamplesCount;
+
+            // Convertir a mono sumando todos los canales y promediando
+            float[] monoSamples = new float[monoSamplesCount];
+            for (int i = 0; i < monoSamplesCount; i++)
             {
-                analyzer.AddSample(buffer[offset + i]);
+                float sum = 0;
+                for (int c = 0; c < channels; c++)
+                {
+                    sum += buffer[offset + i * channels + c];
+                }
+                monoSamples[i] = sum / channels;
             }
+
+            // Escribir muestras mono en el búfer circular
+            player.SampleBuffer?.Write(monoSamples, startFrameIndex, monoSamplesCount);
 
             return samplesRead;
         }
     }
 
-    public class AudioAnalyzer
+    public class CircularSampleBuffer
     {
-        private readonly Complex[] fftBuffer;
-        private readonly int fftLength;
-        private int bufferPosition;
+        private readonly float[] buffer;
+        private readonly int size;
+        private long totalSamplesWritten;
         private readonly object lockObject = new object();
 
-        public float[] Magnitudes { get; private set; }
-        public event EventHandler<float[]> FftCalculated;
-
-        public AudioAnalyzer(int fftLength = 1024)
+        public CircularSampleBuffer(int size)
         {
-            this.fftLength = fftLength;
-            fftBuffer = new Complex[fftLength];
-            Magnitudes = new float[fftLength / 2];
+            this.size = size;
+            this.buffer = new float[size];
+            this.totalSamplesWritten = 0;
         }
 
-        public void AddSample(float value)
+        public void Reset()
         {
             lock (lockObject)
             {
-                fftBuffer[bufferPosition].X = value;
-                fftBuffer[bufferPosition].Y = 0;
-                bufferPosition++;
+                Array.Clear(buffer, 0, buffer.Length);
+                totalSamplesWritten = 0;
+            }
+        }
 
-                if (bufferPosition >= fftLength)
+        public void Write(float[] samples, long startPosition, int count)
+        {
+            lock (lockObject)
+            {
+                for (int i = 0; i < count; i++)
                 {
-                    bufferPosition = 0;
-                    ComputeFFT();
-                    FftCalculated?.Invoke(this, (float[])Magnitudes.Clone());
+                    long pos = startPosition + i;
+                    int index = (int)(pos % size);
+                    buffer[index] = samples[i];
+                }
+                if (startPosition + count > totalSamplesWritten)
+                {
+                    totalSamplesWritten = startPosition + count;
                 }
             }
         }
 
-        private void ComputeFFT()
+        public void Read(float[] output, long startPosition, int count)
         {
-            // Aplicar ventana de Hanning para reducir el "leakage"
-            ApplyHanningWindow();
-
-            // Calcular FFT
-            FastFourierTransform.FFT(true, (int)Math.Log(fftLength, 2), fftBuffer);
-
-            // Calcular magnitudes y aplicar escala logarítmica
-            for (int i = 0; i < fftLength / 2; i++)
+            lock (lockObject)
             {
-                var magnitude = Math.Sqrt(fftBuffer[i].X * fftBuffer[i].X + fftBuffer[i].Y * fftBuffer[i].Y);
-
-                // Escala logarítmica para mejor visualización
-                Magnitudes[i] = (float)(Math.Log10(magnitude * 1000 + 1) / 4.0);
-
-                // Normalizar entre 0 y 1
-                Magnitudes[i] = Math.Max(0, Math.Min(1, Magnitudes[i]));
-            }
-        }
-
-        private void ApplyHanningWindow()
-        {
-            for (int i = 0; i < fftLength; i++)
-            {
-                var window = 0.5 * (1 - Math.Cos(2 * Math.PI * i / (fftLength - 1)));
-                fftBuffer[i].X *= (float)window;
+                for (int i = 0; i < count; i++)
+                {
+                    long pos = startPosition + i;
+                    if (pos < 0 || pos >= totalSamplesWritten)
+                    {
+                        output[i] = 0;
+                    }
+                    else
+                    {
+                        // Si la posición solicitada ya fue sobreescrita
+                        if (totalSamplesWritten - pos > size)
+                        {
+                            output[i] = 0;
+                        }
+                        else
+                        {
+                            int index = (int)(pos % size);
+                            output[i] = buffer[index];
+                        }
+                    }
+                }
             }
         }
     }

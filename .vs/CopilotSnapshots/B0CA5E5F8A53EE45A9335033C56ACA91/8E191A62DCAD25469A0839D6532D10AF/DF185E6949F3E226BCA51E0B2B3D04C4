@@ -1,8 +1,7 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using NAudio.Dsp;
 
 namespace MusicPlayer
 {
@@ -23,10 +22,6 @@ namespace MusicPlayer
         private VisualizationType visualizationType = VisualizationType.Bars;
         private readonly Timer renderTimer;
         private readonly Random random = new Random();
-
-        private AudioPlayer audioPlayer;
-        private float[] fftSamples;
-        private Complex[] fftBuffer;
 
         // Configuración de colores
         private readonly Color[] spectrumColors =
@@ -49,11 +44,6 @@ namespace MusicPlayer
             }
         }
 
-        public void SetAudioPlayer(AudioPlayer player)
-        {
-            this.audioPlayer = player;
-        }
-
         public VisualizationPanel()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint |
@@ -67,80 +57,17 @@ namespace MusicPlayer
 
         public void UpdateVisualization(float[] magnitudes)
         {
-            // Este método se mantiene por compatibilidad, pero la lógica ahora se maneja en OnPaint/UpdateFftFromPlayer
-        }
+            if (magnitudes == null) return;
 
-        private void UpdateFftFromPlayer()
-        {
-            if (audioPlayer == null)
+            currentMagnitudes = (float[])magnitudes.Clone();
+
+            // Suavizado para evitar cambios bruscos
+            if (smoothedMagnitudes == null)
+                smoothedMagnitudes = new float[magnitudes.Length];
+
+            for (int i = 0; i < magnitudes.Length && i < smoothedMagnitudes.Length; i++)
             {
-                return;
-            }
-
-            if (!audioPlayer.IsPlaying)
-            {
-                // Si no se está reproduciendo, decaer los valores lentamente a 0 para un desvanecimiento suave
-                if (smoothedMagnitudes != null)
-                {
-                    for (int i = 0; i < smoothedMagnitudes.Length; i++)
-                    {
-                        smoothedMagnitudes[i] *= 0.85f;
-                        if (smoothedMagnitudes[i] < 0.001f) smoothedMagnitudes[i] = 0;
-                    }
-                }
-                return;
-            }
-
-            int sampleRate = audioPlayer.SampleRate;
-            if (sampleRate <= 0) return;
-
-            int fftLength = audioPlayer.FftLength;
-            if (fftSamples == null || fftSamples.Length != fftLength)
-            {
-                fftSamples = new float[fftLength];
-                fftBuffer = new Complex[fftLength];
-                currentMagnitudes = new float[fftLength / 2];
-                smoothedMagnitudes = new float[fftLength / 2];
-            }
-
-            // Calcular el tiempo de reproducción actual compensando la latencia del dispositivo
-            double latencySec = audioPlayer.LatencyMilliseconds / 1000.0;
-            double playTimeSec = audioPlayer.CurrentTime.TotalSeconds - latencySec;
-            if (playTimeSec < 0) playTimeSec = 0;
-
-            long playPositionInSamples = (long)(playTimeSec * sampleRate);
-
-            // Leer las muestras desde el búfer circular centrando la ventana en la posición de reproducción
-            audioPlayer.SampleBuffer?.Read(fftSamples, playPositionInSamples - fftLength / 2, fftLength);
-
-            // Cargar datos en el búfer de la FFT
-            for (int i = 0; i < fftLength; i++)
-            {
-                fftBuffer[i].X = fftSamples[i];
-                fftBuffer[i].Y = 0;
-            }
-
-            // Aplicar ventana de Hanning para reducir el "leakage"
-            for (int i = 0; i < fftLength; i++)
-            {
-                var window = 0.5 * (1 - Math.Cos(2 * Math.PI * i / (fftLength - 1)));
-                fftBuffer[i].X *= (float)window;
-            }
-
-            // Calcular FFT
-            FastFourierTransform.FFT(true, (int)Math.Log(fftLength, 2), fftBuffer);
-
-            // Calcular magnitudes y aplicar escala logarítmica
-            for (int i = 0; i < fftLength / 2; i++)
-            {
-                var magnitude = Math.Sqrt(fftBuffer[i].X * fftBuffer[i].X + fftBuffer[i].Y * fftBuffer[i].Y);
-
-                // Escala logarítmica para mejor visualización
-                currentMagnitudes[i] = (float)(Math.Log10(magnitude * 1000 + 1) / 4.0);
-                currentMagnitudes[i] = Math.Max(0, Math.Min(1, currentMagnitudes[i]));
-
-                // Suavizado para una animación fluida
-                smoothedMagnitudes[i] = smoothedMagnitudes[i] * 0.75f + currentMagnitudes[i] * 0.25f;
+                smoothedMagnitudes[i] = smoothedMagnitudes[i] * 0.8f + magnitudes[i] * 0.2f;
             }
         }
 
@@ -148,10 +75,7 @@ namespace MusicPlayer
         {
             base.OnPaint(e);
 
-            UpdateFftFromPlayer();
-
             if (smoothedMagnitudes == null) return;
-            if (Width <= 1 || Height <= 1) return;
 
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -204,7 +128,7 @@ namespace MusicPlayer
                 var x = i * barWidth;
                 var y = height - barHeight;
 
-                if (barHeight >= 1.0f)
+                if (barHeight > 0.1f)
                 {
                     var alpha = (int)(Math.Min(avgMagnitude * 2, 1) * 255);
                     alpha = Math.Max(0, Math.Min(255, alpha));

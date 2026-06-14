@@ -1,4 +1,4 @@
-using NAudio.Gui;
+﻿using NAudio.Gui;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,8 +17,6 @@ namespace MusicPlayer
         private AudioPlayer audioPlayer;
         private VisualizationPanel visualizationPanel;
         private Timer uiUpdateTimer;
-        private Timer randomVizTimer;
-        private Random randomVizGen = new Random();
         private PlaylistManager playlistManager;
         private bool isUserDragging = false;
         public FrmIndex()
@@ -36,7 +34,7 @@ namespace MusicPlayer
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(30, 30, 30);
             this.ForeColor = Color.White;
-            cmbVisualizationType.Items.AddRange(new[] { "Barras", "Círculo", "Onda", "Partículas", "Ambiente", "Batería", "Aleatorio" });
+            cmbVisualizationType.Items.AddRange(new[] { "Barras", "Círculo", "Onda" });
             cmbVisualizationType.SelectedIndex = 0;
             lblCurrentTime.Size = new Size(60, 20);
             lblTotalTime.Size = new Size(60, 20);
@@ -51,7 +49,6 @@ namespace MusicPlayer
                 BackColor = Color.Black,
                 Location = new Point(0, 0)
             };
-            visualizationPanel.SetAudioPlayer(audioPlayer);
 
             // Handle form resize to adjust panel size
             this.Resize += UpdateVisualizationPanelSize;
@@ -77,6 +74,7 @@ namespace MusicPlayer
         private void SetupAudioPlayer()
         {
             audioPlayer = new AudioPlayer();
+            audioPlayer.FftCalculated += AudioPlayer_FftCalculated;
             audioPlayer.PlaybackStateChanged += AudioPlayer_PlaybackStateChanged;
         }
 
@@ -85,21 +83,14 @@ namespace MusicPlayer
             uiUpdateTimer = new Timer { Interval = 100 };
             uiUpdateTimer.Tick += UiUpdateTimer_Tick;
             uiUpdateTimer.Start();
-
-            randomVizTimer = new Timer { Interval = 120000 }; // 2 minutes
-            randomVizTimer.Tick += RandomVizTimer_Tick;
-        }
-
-        private void RandomVizTimer_Tick(object sender, EventArgs e)
-        {
-            if (visualizationPanel != null)
-            {
-                int maxVizTypes = 6; // Bars, Circle, Wave, Particles, Alchemy, Battery
-                visualizationPanel.VisualizationType = (VisualizationType)randomVizGen.Next(maxVizTypes);
-            }
         }
 
         // Event Handlers
+
+        private void AudioPlayer_FftCalculated(object sender, float[] magnitudes)
+        {
+            visualizationPanel?.UpdateVisualization(magnitudes);
+        }
 
         private void AudioPlayer_PlaybackStateChanged(object sender, PlaybackState state)
         {
@@ -138,7 +129,6 @@ namespace MusicPlayer
         {
             audioPlayer?.Dispose();
             uiUpdateTimer?.Dispose();
-            randomVizTimer?.Dispose();
             base.OnFormClosing(e);
         }
 
@@ -192,18 +182,7 @@ namespace MusicPlayer
         {
             if (visualizationPanel != null)
             {
-                if (cmbVisualizationType.SelectedItem.ToString() == "Aleatorio")
-                {
-                    randomVizTimer.Start();
-                    int maxVizTypes = 6;
-                    visualizationPanel.VisualizationType = (VisualizationType)randomVizGen.Next(maxVizTypes);
-                }
-                else
-                {
-                    randomVizTimer.Stop();
-                    // Maps 0-5 directly since they match combo order until particles... Wait, let's just parse safely.
-                    visualizationPanel.VisualizationType = (VisualizationType)cmbVisualizationType.SelectedIndex;
-                }
+                visualizationPanel.VisualizationType = (VisualizationType)cmbVisualizationType.SelectedIndex;
             }
         }
 

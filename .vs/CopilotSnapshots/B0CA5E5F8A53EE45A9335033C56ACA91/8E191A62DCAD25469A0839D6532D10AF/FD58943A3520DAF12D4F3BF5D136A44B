@@ -1,8 +1,7 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using NAudio.Dsp;
 
 namespace MusicPlayer
 {
@@ -11,9 +10,7 @@ namespace MusicPlayer
         Bars,
         Circle,
         Wave,
-        Particles,
-        Alchemy,
-        Battery
+        Particles
     }
 
     public class VisualizationPanel : Panel
@@ -23,10 +20,6 @@ namespace MusicPlayer
         private VisualizationType visualizationType = VisualizationType.Bars;
         private readonly Timer renderTimer;
         private readonly Random random = new Random();
-
-        private AudioPlayer audioPlayer;
-        private float[] fftSamples;
-        private Complex[] fftBuffer;
 
         // Configuración de colores
         private readonly Color[] spectrumColors =
@@ -49,11 +42,6 @@ namespace MusicPlayer
             }
         }
 
-        public void SetAudioPlayer(AudioPlayer player)
-        {
-            this.audioPlayer = player;
-        }
-
         public VisualizationPanel()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint |
@@ -67,80 +55,17 @@ namespace MusicPlayer
 
         public void UpdateVisualization(float[] magnitudes)
         {
-            // Este método se mantiene por compatibilidad, pero la lógica ahora se maneja en OnPaint/UpdateFftFromPlayer
-        }
+            if (magnitudes == null) return;
 
-        private void UpdateFftFromPlayer()
-        {
-            if (audioPlayer == null)
+            currentMagnitudes = (float[])magnitudes.Clone();
+
+            // Suavizado para evitar cambios bruscos
+            if (smoothedMagnitudes == null)
+                smoothedMagnitudes = new float[magnitudes.Length];
+
+            for (int i = 0; i < magnitudes.Length && i < smoothedMagnitudes.Length; i++)
             {
-                return;
-            }
-
-            if (!audioPlayer.IsPlaying)
-            {
-                // Si no se está reproduciendo, decaer los valores lentamente a 0 para un desvanecimiento suave
-                if (smoothedMagnitudes != null)
-                {
-                    for (int i = 0; i < smoothedMagnitudes.Length; i++)
-                    {
-                        smoothedMagnitudes[i] *= 0.85f;
-                        if (smoothedMagnitudes[i] < 0.001f) smoothedMagnitudes[i] = 0;
-                    }
-                }
-                return;
-            }
-
-            int sampleRate = audioPlayer.SampleRate;
-            if (sampleRate <= 0) return;
-
-            int fftLength = audioPlayer.FftLength;
-            if (fftSamples == null || fftSamples.Length != fftLength)
-            {
-                fftSamples = new float[fftLength];
-                fftBuffer = new Complex[fftLength];
-                currentMagnitudes = new float[fftLength / 2];
-                smoothedMagnitudes = new float[fftLength / 2];
-            }
-
-            // Calcular el tiempo de reproducción actual compensando la latencia del dispositivo
-            double latencySec = audioPlayer.LatencyMilliseconds / 1000.0;
-            double playTimeSec = audioPlayer.CurrentTime.TotalSeconds - latencySec;
-            if (playTimeSec < 0) playTimeSec = 0;
-
-            long playPositionInSamples = (long)(playTimeSec * sampleRate);
-
-            // Leer las muestras desde el búfer circular centrando la ventana en la posición de reproducción
-            audioPlayer.SampleBuffer?.Read(fftSamples, playPositionInSamples - fftLength / 2, fftLength);
-
-            // Cargar datos en el búfer de la FFT
-            for (int i = 0; i < fftLength; i++)
-            {
-                fftBuffer[i].X = fftSamples[i];
-                fftBuffer[i].Y = 0;
-            }
-
-            // Aplicar ventana de Hanning para reducir el "leakage"
-            for (int i = 0; i < fftLength; i++)
-            {
-                var window = 0.5 * (1 - Math.Cos(2 * Math.PI * i / (fftLength - 1)));
-                fftBuffer[i].X *= (float)window;
-            }
-
-            // Calcular FFT
-            FastFourierTransform.FFT(true, (int)Math.Log(fftLength, 2), fftBuffer);
-
-            // Calcular magnitudes y aplicar escala logarítmica
-            for (int i = 0; i < fftLength / 2; i++)
-            {
-                var magnitude = Math.Sqrt(fftBuffer[i].X * fftBuffer[i].X + fftBuffer[i].Y * fftBuffer[i].Y);
-
-                // Escala logarítmica para mejor visualización
-                currentMagnitudes[i] = (float)(Math.Log10(magnitude * 1000 + 1) / 4.0);
-                currentMagnitudes[i] = Math.Max(0, Math.Min(1, currentMagnitudes[i]));
-
-                // Suavizado para una animación fluida
-                smoothedMagnitudes[i] = smoothedMagnitudes[i] * 0.75f + currentMagnitudes[i] * 0.25f;
+                smoothedMagnitudes[i] = smoothedMagnitudes[i] * 0.8f + magnitudes[i] * 0.2f;
             }
         }
 
@@ -148,10 +73,7 @@ namespace MusicPlayer
         {
             base.OnPaint(e);
 
-            UpdateFftFromPlayer();
-
             if (smoothedMagnitudes == null) return;
-            if (Width <= 1 || Height <= 1) return;
 
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -170,12 +92,6 @@ namespace MusicPlayer
                     break;
                 case VisualizationType.Particles:
                     DrawParticles(g);
-                    break;
-                case VisualizationType.Alchemy:
-                    DrawAlchemy(g);
-                    break;
-                case VisualizationType.Battery:
-                    DrawBattery(g);
                     break;
             }
         }
@@ -204,37 +120,27 @@ namespace MusicPlayer
                 var x = i * barWidth;
                 var y = height - barHeight;
 
-                if (barHeight >= 1.0f)
+                // Color basado en la frecuencia
+                var colorIndex = (int)(i / (float)barCount * spectrumColors.Length);
+                colorIndex = Math.Min(colorIndex, spectrumColors.Length - 1);
+                var color = spectrumColors[colorIndex];
+
+                // Intensidad basada en la magnitud
+                var alpha = (int)(Math.Min(avgMagnitude * 2, 1) * 255);
+                var brushColor = Color.FromArgb(alpha, color);
+
+                using (var brush = new SolidBrush(brushColor))
                 {
-                    var alpha = (int)(Math.Min(avgMagnitude * 2, 1) * 255);
-                    alpha = Math.Max(0, Math.Min(255, alpha));
+                    g.FillRectangle(brush, x + 1, y, barWidth - 2, barHeight);
+                }
 
-                    using (var brush = new LinearGradientBrush(
-                        new PointF(x, y + barHeight),
-                        new PointF(x, y),
-                        Color.Lime,
-                        Color.Red))
+                // Efecto de brillo en la parte superior
+                if (barHeight > 10)
+                {
+                    var glowColor = Color.FromArgb(alpha / 2, Color.White);
+                    using (var glowBrush = new SolidBrush(glowColor))
                     {
-                        ColorBlend blend = new ColorBlend();
-                        blend.Positions = new float[] { 0.0f, 0.5f, 1.0f };
-                        blend.Colors = new Color[] { 
-                            Color.FromArgb(alpha, Color.Lime), 
-                            Color.FromArgb(alpha, Color.Yellow), 
-                            Color.FromArgb(alpha, Color.Red) 
-                        };
-                        brush.InterpolationColors = blend;
-
-                        g.FillRectangle(brush, x + 1, y, barWidth - 2, barHeight);
-                    }
-
-                    // Efecto de brillo en la parte superior
-                    if (barHeight > 10)
-                    {
-                        var glowColor = Color.FromArgb(alpha / 2, Color.White);
-                        using (var glowBrush = new SolidBrush(glowColor))
-                        {
-                            g.FillRectangle(glowBrush, x + 1, y, barWidth - 2, 3);
-                        }
+                        g.FillRectangle(glowBrush, x + 1, y, barWidth - 2, 3);
                     }
                 }
             }
@@ -429,146 +335,43 @@ namespace MusicPlayer
             }
         }
 
-        private class Particle
-        {
-            public float X, Y, Z;
-        }
-        private Particle[] particles;
-
         private void DrawParticles(Graphics g)
         {
-            if (particles == null)
-            {
-                particles = new Particle[150];
-                for (int i = 0; i < 150; i++)
-                {
-                    particles[i] = new Particle
-                    {
-                        X = (float)random.NextDouble() * 2 - 1,
-                        Y = (float)random.NextDouble() * 2 - 1,
-                        Z = (float)random.NextDouble() * 2
-                    };
-                }
-            }
-
             var centerX = Width / 2f;
             var centerY = Height / 2f;
-            float windSpeed = (smoothedMagnitudes.Length > 0) ? smoothedMagnitudes[0] * 0.5f : 0.01f;
+            var particleCount = Math.Min(100, smoothedMagnitudes.Length);
 
-            for (int i = 0; i < particles.Length; i++)
+            for (int i = 0; i < particleCount; i++)
             {
-                particles[i].Z -= (0.01f + windSpeed * 0.1f);
-                if (particles[i].Z <= 0)
+                if (i >= smoothedMagnitudes.Length) break;
+
+                var magnitude = smoothedMagnitudes[i];
+                if (magnitude < 0.1f) continue; // Solo dibujar partículas activas
+
+                // Posición basada en análisis de frecuencia
+                var angle = (float)(2 * Math.PI * i / particleCount);
+                var distance = magnitude * Math.Min(Width, Height) / 4f;
+                var x = centerX + (float)Math.Cos(angle) * distance;
+                var y = centerY + (float)Math.Sin(angle) * distance;
+
+                // Tamaño y color basado en magnitud
+                var size = magnitude * 20 + 2;
+                var colorIndex = (int)(i / (float)particleCount * spectrumColors.Length);
+                colorIndex = Math.Min(colorIndex, spectrumColors.Length - 1);
+                var color = spectrumColors[colorIndex];
+                var alpha = (int)(magnitude * 255);
+
+                // Dibujar partícula con efecto de brillo
+                using (var brush = new SolidBrush(Color.FromArgb(alpha, color)))
                 {
-                    particles[i].Z = 2f;
-                    particles[i].X = (float)random.NextDouble() * 2 - 1;
-                    particles[i].Y = (float)random.NextDouble() * 2 - 1;
+                    g.FillEllipse(brush, x - size / 2, y - size / 2, size, size);
                 }
 
-                float scale = 1f / particles[i].Z;
-                float px = centerX + particles[i].X * Width * scale * 0.5f;
-                float py = centerY + particles[i].Y * Height * scale * 0.5f;
-
-                if (px < 0 || px >= Width || py < 0 || py >= Height) continue;
-
-                float mag = smoothedMagnitudes[i % smoothedMagnitudes.Length];
-                float size = scale * 1.5f + mag * 15f;
-                int alpha = (int)(Math.Min(1f, scale * 0.5f) * 255);
-                alpha = Math.Max(0, Math.Min(255, alpha));
-
-                var colorIndex = i % spectrumColors.Length;
-
-                using (var b = new SolidBrush(Color.FromArgb(alpha, spectrumColors[colorIndex])))
+                // Efecto de brillo exterior
+                using (var glowBrush = new SolidBrush(Color.FromArgb(alpha / 3, Color.White)))
                 {
-                    g.FillEllipse(b, px - size / 2, py - size / 2, size, size);
-                }
-
-                if (mag > 0.1f)
-                {
-                    using (var bGlow = new SolidBrush(Color.FromArgb(alpha / 3, Color.White)))
-                    {
-                        g.FillEllipse(bGlow, px - size, py - size, size * 2, size * 2);
-                    }
-                }
-            }
-        }
-
-        private void DrawAlchemy(Graphics g)
-        {
-            float tiempo = (float)DateTime.Now.TimeOfDay.TotalSeconds;
-            float graves = 0;
-            if (smoothedMagnitudes != null && smoothedMagnitudes.Length >= 5)
-            {
-                for (int i = 0; i < 5; i++) graves += smoothedMagnitudes[i];
-                graves /= 5f;
-            }
-
-            var centerX = Width / 2f;
-            var centerY = Height / 2f;
-
-            for (int i = 0; i < 5; i++)
-            {
-                float offsetX = (float)Math.Sin(tiempo * (1 + i * 0.5f)) * Width * 0.3f;
-                float offsetY = (float)Math.Cos(tiempo * (1.2f + i * 0.4f)) * Height * 0.3f;
-                float size = (Width * 0.2f) + (graves * Width * 0.6f) * Math.Abs((float)Math.Sin(tiempo * 2 + i));
-
-                Color c = ColorFromHsv((tiempo * 20 + i * 50) % 360, 0.7f, 0.9f);
-                int alpha = (int)Math.Min(255, 100 + graves * 200);
-
-                using (GraphicsPath path = new GraphicsPath())
-                {
-                    path.AddEllipse(centerX + offsetX - size / 2, centerY + offsetY - size / 2, size, size);
-                    using (PathGradientBrush pgb = new PathGradientBrush(path))
-                    {
-                        pgb.CenterColor = Color.FromArgb(alpha, c);
-                        pgb.SurroundColors = new Color[] { Color.Transparent };
-                        g.FillPath(pgb, path);
-                    }
-                }
-            }
-        }
-
-        private void DrawBattery(Graphics g)
-        {
-            float tiempo = (float)DateTime.Now.TimeOfDay.TotalSeconds * 2f;
-            var centerX = Width / 2f;
-            var centerY = Height / 2f;
-
-            int tunnelLevels = 10;
-            for (int i = tunnelLevels; i > 0; i--)
-            {
-                float z = (i - (tiempo % 1)) / (float)tunnelLevels;
-                if (z <= 0) continue;
-
-                float scale = 1f / z;
-                float sizeX = 50 * scale;
-                float sizeY = 50 * scale;
-
-                float angle = tiempo * 30 * (z + 0.1f);
-                int magicIndex = i * 2 % smoothedMagnitudes.Length;
-                float mag = smoothedMagnitudes[magicIndex];
-
-                Color tunnelColor = ColorFromHsv((tiempo * 50 + i * 20) % 360, 1f, 1f);
-                int alpha = (int)(255 * (1 - z));
-                alpha = Math.Max(0, Math.Min(255, alpha));
-
-                using (Pen p = new Pen(Color.FromArgb(alpha, tunnelColor), 3 + mag * 15))
-                {
-                    GraphicsState state = g.Save();
-                    g.TranslateTransform(centerX, centerY);
-                    g.RotateTransform(angle);
-                    g.DrawRectangle(p, -sizeX / 2, -sizeY / 2, sizeX, sizeY);
-                    g.Restore(state);
-                }
-            }
-
-            float graves = smoothedMagnitudes.Length > 0 ? smoothedMagnitudes[0] : 0;
-            if (graves > 0.4f && random.NextDouble() > 0.5)
-            {
-                int flashAlpha = (int)Math.Min(255, graves * 100);
-                using (SolidBrush flash = new SolidBrush(Color.FromArgb(flashAlpha, Color.White)))
-                {
-                    g.FillRectangle(flash, 0, 0, Width, Height);
+                    var glowSize = size * 1.5f;
+                    g.FillEllipse(glowBrush, x - glowSize / 2, y - glowSize / 2, glowSize, glowSize);
                 }
             }
         }
